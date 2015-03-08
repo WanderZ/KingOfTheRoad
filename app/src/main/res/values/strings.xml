@@ -20,6 +20,7 @@
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="user_avatar">User Avatar</string>
 
     <!-- Added as placeholder text for cards_layout.xml-->
     <string name="txtNameNotReplaced">Name</string>

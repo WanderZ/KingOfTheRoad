@@ -4,26 +4,49 @@ import android.bluetooth.BluetoothGatt;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.content.Context;
+import android.content.res.Configuration;
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
 import com.google.android.gms.maps.GoogleMap;
+import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
 import com.razer.android.nabuopensdk.AuthCheckCallback;
 import com.razer.android.nabuopensdk.NabuOpenSDK;
 import com.razer.android.nabuopensdk.interfaces.BandListListener;
 import com.razer.android.nabuopensdk.interfaces.LiveDataListener;
 import com.razer.android.nabuopensdk.interfaces.NabuAuthListener;
+import com.razer.android.nabuopensdk.interfaces.UserProfileListener;
 import com.razer.android.nabuopensdk.models.NabuBand;
 import com.razer.android.nabuopensdk.models.NabuFitness;
 import com.razer.android.nabuopensdk.models.Scope;
+import com.razer.android.nabuopensdk.models.UserProfile;
+import com.squareup.picasso.Picasso;
+import java.util.zip.Inflater;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -37,6 +60,8 @@ public class MainActivity extends ActionBarActivity {
     private final static String STATE_KEY_NABU_CONNECTED_BANDS = "nabuConnectedBands";
     private final static String STATE_KEY_NABU_GET_CONNECTED_BANDS_IN_PROGRESS = "nabuGetConnectedBandsInProgress";
     private final static String STATE_KEY_NABU_LIVE_FITNESS_ENABLED = "nabuLiveFitnessEnabled";
+    private final static String STATE_KEY_NABU_USER_PROFILE = "nabuUserProfile";
+    private final static String STATE_KEY_NABU_GET_USER_PROFILE_IN_PROGRESS = "nabuGetUserProfileInProgress";
 
     private NabuOpenSDK mNabuSDK;
     private boolean mNabuSDKAuthorized;
@@ -46,12 +71,17 @@ public class MainActivity extends ActionBarActivity {
     private NabuBand[] mNabuConnectedBands;
     private boolean mNabuGetConnectedBandsInProgress;
     private boolean mNabuLiveFitnessEnabled;
-    protected GoogleMap mMap;
+    private ParcelableUserProfile mNabuUserProfile;
+    private boolean mNabuGetUserProfileInProgress;
 
-    private String[] drawerListViewItems;
-    private DrawerLayout drawerLayout;
-    private ListView drawerListView;
-    private ActionBarDrawerToggle actionBarDrawerToggle;
+    private Toolbar mToolbar;
+    private Spinner mDrawerBandSelectionSpinner;
+    private DrawerBandSelectionAdapter mDrawerBandSelectionAdapter;
+    private String[] mDrawerListViewItems;
+    private DrawerLayout mDrawerLayout;
+    private LinearLayout mDrawer;
+    private ListView mDrawerListView;
+    private ActionBarDrawerToggle mActionBarDrawerToggle;
     // nav drawer title
     private CharSequence mDrawerTitle;
     // used to store app title
@@ -61,6 +91,10 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Set up the toolbar.
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
 
         mTitle = mDrawerTitle = getTitle();
 
@@ -77,6 +111,8 @@ public class MainActivity extends ActionBarActivity {
             mNabuConnectedBands = (NabuBand[]) savedInstanceState.getParcelableArray(STATE_KEY_NABU_CONNECTED_BANDS);
             mNabuGetConnectedBandsInProgress = savedInstanceState.getBoolean(STATE_KEY_NABU_GET_CONNECTED_BANDS_IN_PROGRESS);
             mNabuLiveFitnessEnabled = savedInstanceState.getBoolean(STATE_KEY_NABU_LIVE_FITNESS_ENABLED);
+            mNabuGetUserProfileInProgress = savedInstanceState.getBoolean(STATE_KEY_NABU_GET_USER_PROFILE_IN_PROGRESS);
+            mNabuUserProfile = savedInstanceState.getParcelable(STATE_KEY_NABU_USER_PROFILE);
         }
 
         // At this point, we are not sure if we have been authorized. So let's check.
@@ -87,36 +123,33 @@ public class MainActivity extends ActionBarActivity {
                 mNabuSDK.checkAppAuthorized(this, new MyNabuAuthCheckCallback());
             }
         } else {
-            nabuGetAllBandList();
+            nabuRunPostAuthActions();
         }
 
-//        mNabuSDK.getCurrentUserID(this, new UserIDListener() {
-//            @Override
-//            public void onReceiveData(String userID) {
-//                Log.d(TAG, "My user ID is: " + userID);
-//            }
-//
-//            @Override
-//            public void onReceiveFailed(String s) {
-//                Log.d(TAG, "My user ID is: FAILED");
-//            }
-//        });
         // get list items from strings.xml
-        drawerListViewItems = getResources().getStringArray(R.array.items);
+        mDrawerListViewItems = getResources().getStringArray(R.array.items);
         // get ListView defined in activity_main.xml
-        drawerListView = (ListView) findViewById(R.id.left_drawer);
+        mDrawerListView = (ListView) findViewById(R.id.drawer_list_view);
+        mDrawer = (LinearLayout) findViewById(R.id.drawer);
 
         // Set the adapter for the list view
-        drawerListView.setAdapter(new ArrayAdapter<String>(this,
-                R.layout.drawer_list_item, drawerListViewItems));
+        mDrawerListView.addHeaderView(LayoutInflater.from(this).inflate(R.layout.drawer_list_view_header, null, false));
+        mDrawerListView.setAdapter(new ArrayAdapter<String>(this,
+                R.layout.drawer_list_item, mDrawerListViewItems));
+
+        // Set up the navigation drawer.
+        mDrawerBandSelectionAdapter = new DrawerBandSelectionAdapter(this);
+        mDrawerBandSelectionSpinner = (Spinner) findViewById(R.id.drawer_band_selection_spinner);
+        mDrawerBandSelectionSpinner.setAdapter(mDrawerBandSelectionAdapter);
 
         // 2. App Icon
-        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 
         // 2.1 create ActionBarDrawerToggle
-        actionBarDrawerToggle = new ActionBarDrawerToggle(
+        mActionBarDrawerToggle = new ActionBarDrawerToggle(
                 this,                  /* host Activity */
-                drawerLayout,         /* DrawerLayout object */
+                mDrawerLayout,         /* DrawerLayout object */
+                mToolbar,
                 R.string.drawer_open,  /* "open drawer" description */
                 R.string.drawer_close  /* "close drawer" description */
         ){
@@ -134,16 +167,16 @@ public class MainActivity extends ActionBarActivity {
         }
         ;
 
-        // 2.2 Set actionBarDrawerToggle as the DrawerListener
-        drawerLayout.setDrawerListener(actionBarDrawerToggle);
+        // 2.2 Set mActionBarDrawerToggle as the DrawerListener
+        mDrawerLayout.setDrawerListener(mActionBarDrawerToggle);
 
         // 2.3 enable and show "up" arrow
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         // just styling option
-        drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+        mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
 
-        drawerListView.setOnItemClickListener(new DrawerItemClickListener());
+        mDrawerListView.setOnItemClickListener(new DrawerItemClickListener());
 
         if (savedInstanceState == null) {
             // on first time display view for first nav item
@@ -155,13 +188,13 @@ public class MainActivity extends ActionBarActivity {
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         // Sync the toggle state after onRestoreInstanceState has occurred.
-        actionBarDrawerToggle.syncState();
+        mActionBarDrawerToggle.syncState();
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        actionBarDrawerToggle.onConfigurationChanged(newConfig);
+        mActionBarDrawerToggle.onConfigurationChanged(newConfig);
     }
 
     private class DrawerItemClickListener implements ListView.OnItemClickListener {
@@ -198,10 +231,10 @@ public class MainActivity extends ActionBarActivity {
                     .replace(R.id.content_frame, fragment).commit();
 
             // update selected item and title, then close the drawer
-            drawerListView.setItemChecked(position, true);
-            drawerListView.setSelection(position);
-            setTitle(drawerListViewItems[position]);
-            drawerLayout.closeDrawer(drawerListView);
+            mDrawerListView.setItemChecked(position, true);
+            mDrawerListView.setSelection(position);
+            setTitle(mDrawerListViewItems[position]);
+            mDrawerLayout.closeDrawer(mDrawer);
         } else {
             // error in creating fragment
             Log.e("MainActivity", "Error in creating fragment");
@@ -221,6 +254,8 @@ public class MainActivity extends ActionBarActivity {
         outState.putParcelableArray(STATE_KEY_NABU_CONNECTED_BANDS, mNabuConnectedBands);
         outState.putBoolean(STATE_KEY_NABU_GET_CONNECTED_BANDS_IN_PROGRESS, mNabuGetConnectedBandsInProgress);
         outState.putBoolean(STATE_KEY_NABU_LIVE_FITNESS_ENABLED, mNabuLiveFitnessEnabled);
+        outState.putBoolean(STATE_KEY_NABU_GET_USER_PROFILE_IN_PROGRESS, mNabuGetUserProfileInProgress);
+        outState.putParcelable(STATE_KEY_NABU_USER_PROFILE, mNabuUserProfile);
     }
 
     @Override
@@ -259,6 +294,14 @@ public class MainActivity extends ActionBarActivity {
         return true;
     }
 
+    @Override
+    public void onBackPressed() {
+        if (mDrawerLayout.isDrawerOpen(mDrawer)) {
+            mDrawerLayout.closeDrawer(mDrawer);
+        } else {
+            super.onBackPressed();
+        }
+    }
 
     /* *
 	 * Called when invalidateOptionsMenu() is triggered
@@ -266,7 +309,7 @@ public class MainActivity extends ActionBarActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         // if nav drawer is opened, hide the action items
-        boolean drawerOpen = drawerLayout.isDrawerOpen(drawerListView);
+        boolean drawerOpen = mDrawerLayout.isDrawerOpen(mDrawer);
         menu.findItem(R.id.action_settings).setVisible(!drawerOpen);
         return super.onPrepareOptionsMenu(menu);
     }
@@ -279,7 +322,7 @@ public class MainActivity extends ActionBarActivity {
         int id = item.getItemId();
 
         // toggle nav drawer on selecting action bar app icon/title
-        if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
+        if (mActionBarDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
 
@@ -293,9 +336,10 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void nabuGetAllBandList() {
+    private void nabuRunPostAuthActions() {
         nabuGetBandList();
         nabuGetConnectedBandList();
+        nabuGetUserProfile();
     }
 
     private void nabuGetBandList() {
@@ -312,7 +356,45 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    private void nabuGetUserProfile() {
+        if (!mNabuGetUserProfileInProgress) {
+            mNabuGetUserProfileInProgress = true;
+            mNabuSDK.getUserProfile(this, new MyNabuUserProfileListener());
+        }
+    }
 
+    private void checkIfNabuLoaded() {
+        if (mNabuBands != null && mNabuConnectedBands != null && mNabuUserProfile != null) {
+            Log.d(TAG, "All data from Nabu loaded.");
+
+            // Populate the user avatar.
+            Picasso.with(this).load(mNabuUserProfile.getUserProfile().avatarUrl)
+                    .into((ImageView) findViewById(R.id.drawer_user_avatar));
+
+            // Populate the band list.
+            mDrawerBandSelectionAdapter.addAll(mNabuBands);
+
+            // Stop the progress bar on the navigation area.
+            final ProgressBar progressBar = (ProgressBar) findViewById(R.id.drawer_user_progress_bar);
+            AlphaAnimation progressBarOutAnimation = new AlphaAnimation(1.0f, 0.0f);
+            progressBarOutAnimation.setDuration(500);
+            progressBarOutAnimation.setFillAfter(true);
+            progressBarOutAnimation.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) { }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    progressBar.setVisibility(View.INVISIBLE);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) { }
+            });
+
+            progressBar.startAnimation(progressBarOutAnimation);
+        }
+    }
 
     /**
      * Callback that is invoked when the authorization check is complete.
@@ -332,7 +414,7 @@ public class MainActivity extends ActionBarActivity {
                     NABU_OPENSDK_SCOPE, new MyNabuAuthListener());
             //mNabuSDKAuthorized = true;
             //mNabuSDKAuthorizationInProgress = false;
-            //nabuGetAllBandList();
+            //nabuRunPostAuthActions();
         }
 
         @Override
@@ -354,7 +436,7 @@ public class MainActivity extends ActionBarActivity {
             Log.v(TAG, "onAuthSuccess: " + s);
             mNabuSDKAuthorized = true;
             mNabuSDKAuthorizationInProgress = false;
-            nabuGetAllBandList();
+            nabuRunPostAuthActions();
         }
 
         @Override
@@ -373,6 +455,7 @@ public class MainActivity extends ActionBarActivity {
 
             mNabuBands = nabuBands;
             mNabuGetBandsInProgress = false;
+            checkIfNabuLoaded();
 
             // Print debugging information.
             for (NabuBand band : nabuBands) {
@@ -396,6 +479,7 @@ public class MainActivity extends ActionBarActivity {
 
             mNabuConnectedBands = nabuBands;
             mNabuGetConnectedBandsInProgress = false;
+            checkIfNabuLoaded();
 
             // Print debugging information.
             for (NabuBand band : nabuBands) {
@@ -437,6 +521,117 @@ public class MainActivity extends ActionBarActivity {
         public void onError(String errorMessage) {
             Log.w(TAG, "onError: " + errorMessage);
             mNabuLiveFitnessEnabled = false;
+        }
+    }
+
+    private class MyNabuUserProfileListener implements UserProfileListener {
+        private final static String TAG = "MyNabuUserProfileListener";
+
+        @Override
+        public void onReceiveData(UserProfile profile) {
+            mNabuUserProfile = new ParcelableUserProfile(profile);
+            mNabuGetUserProfileInProgress = false;
+            checkIfNabuLoaded();
+        }
+
+        @Override
+        public void onReceiveFailed(String s) {
+
+        }
+    }
+
+    private class DrawerBandSelectionAdapter extends ArrayAdapter<NabuBand> {
+        public DrawerBandSelectionAdapter(Context context) {
+            super(context, R.layout.drawer_band_selection_spinner_view, R.id.band_name);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            NabuBand band = getItem(position);
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.drawer_band_selection_spinner_view, parent, false);
+            }
+
+            TextView tvUserNickname = (TextView) convertView.findViewById(R.id.user_nickname);
+            TextView tvBandName = (TextView) convertView.findViewById(R.id.band_name);
+            tvUserNickname.setText(mNabuUserProfile.getUserProfile().nickName);
+            tvBandName.setText(band.name);
+
+            return convertView;
+        }
+
+        @Override
+        public View getDropDownView(int position, View convertView, ViewGroup parent) {
+            NabuBand band = getItem(position);
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.drawer_band_selection_spinner_drop_down_view, parent, false);
+            }
+
+            TextView tvBandName = (TextView) convertView.findViewById(R.id.band_name);
+            tvBandName.setText(band.name);
+
+            return convertView;
+        }
+    }
+
+    private static class ParcelableUserProfile implements Parcelable {
+        private UserProfile mUserProfile = new UserProfile();
+
+        public ParcelableUserProfile(UserProfile profile) {
+            mUserProfile = profile;
+        }
+
+        private ParcelableUserProfile(Parcel in) {
+            mUserProfile.razerID = in.readString();
+            mUserProfile.avatarUrl = in.readString();
+            mUserProfile.birthDay = in.readString();
+            mUserProfile.birthMonth = in.readString();
+            mUserProfile.birtyYear = in.readString();
+            mUserProfile.firstname = in.readString();
+            mUserProfile.lastname = in.readString();
+            mUserProfile.nickName = in.readString();
+            mUserProfile.gender = in.readString();
+            mUserProfile.height = in.readString();
+            mUserProfile.weight = in.readString();
+            mUserProfile.unit = in.readString();
+        }
+
+        public UserProfile getUserProfile() {
+            return mUserProfile;
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        public static final Creator<ParcelableUserProfile> CREATOR =
+                new Creator<ParcelableUserProfile>() {
+                    @Override
+                    public ParcelableUserProfile createFromParcel(Parcel source) {
+                        return new ParcelableUserProfile(source);
+                    }
+
+                    @Override
+                    public ParcelableUserProfile[] newArray(int size) {
+                        return new ParcelableUserProfile[size];
+                    }
+                };
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeString(mUserProfile.razerID);
+            dest.writeString(mUserProfile.avatarUrl);
+            dest.writeString(mUserProfile.birthDay);
+            dest.writeString(mUserProfile.birthMonth);
+            dest.writeString(mUserProfile.birtyYear);
+            dest.writeString(mUserProfile.firstname);
+            dest.writeString(mUserProfile.lastname);
+            dest.writeString(mUserProfile.nickName);
+            dest.writeString(mUserProfile.gender);
+            dest.writeString(mUserProfile.height);
+            dest.writeString(mUserProfile.weight);
+            dest.writeString(mUserProfile.unit);
         }
     }
 }
