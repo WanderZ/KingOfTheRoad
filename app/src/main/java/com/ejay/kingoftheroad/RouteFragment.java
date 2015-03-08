@@ -1,9 +1,9 @@
 package com.ejay.kingoftheroad;
 
 import android.app.Activity;
-import android.support.v4.app.Fragment;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -33,11 +33,11 @@ public class RouteFragment extends Fragment {
     private String mParam2;
 
     private OnFragmentInteractionListener mListener;
-    private LinearLayoutManager layMgr;
+    private LinearLayoutManager mLayoutManager;
     private List<RouteData> people;
     private List<Integer> removed;
-    private RecyclerView rView;
-    private MyAdapter adapter;
+    private RecyclerView mRecycleView;
+    private MyAdapter mAdapter;
 
     /**
      * Use this factory method to create a new instance of
@@ -76,16 +76,15 @@ public class RouteFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_route_display, container, false);
 
-        rView = (RecyclerView) rootView.findViewById(R.id.my_recycler_view);
-        rView.setHasFixedSize(true);
+        mRecycleView = (RecyclerView) rootView.findViewById(R.id.my_recycle_View);
+        mRecycleView.setHasFixedSize(true);
 
-        layMgr = new LinearLayoutManager(getActivity());
-        layMgr.setOrientation(LinearLayoutManager.VERTICAL);
-        rView.setLayoutManager(layMgr);
-        rView.setItemAnimator(new DefaultItemAnimator());
+        mLayoutManager = new LinearLayoutManager(getActivity());
+        mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
 
-        adapter = new MyAdapter<RouteData>(people);
-        rView.setAdapter(adapter);
+        mRecycleView.setLayoutManager(mLayoutManager);
+        mRecycleView.setItemAnimator(new DefaultItemAnimator());
+
         people = new ArrayList<RouteData>();
         for(int i=1; i<=25; i++) {
             people.add(new RouteData(
@@ -93,11 +92,10 @@ public class RouteFragment extends Fragment {
                     "Email" + i,
                     "ID" + i
             ));
-            adapter.notifyItemInserted(0);
         }
-
+        mAdapter = new MyAdapter<RouteData>(people);
+        mRecycleView.setAdapter(mAdapter);
 //        removed = new ArrayList<Integer>();
-
 
         return rootView;
     }
@@ -113,6 +111,7 @@ public class RouteFragment extends Fragment {
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         try {
+            //TODO: Making this view(s) interactive
             mListener = (OnFragmentInteractionListener) activity;
         } catch (ClassCastException e) {
 //            throw new ClassCastException(activity.toString()

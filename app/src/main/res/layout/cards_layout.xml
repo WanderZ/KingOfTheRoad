@@ -1,30 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              tools:context="com.ejay.kingoftheroad.JourneyFragment"
-              android:orientation="vertical">
+<!-- This is the cards layout - to edit this to fit content for routes -->
+<android.support.v7.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    tools:context="com.ejay.kingoftheroad.JourneyFragment"
+    android:id="@+id/card_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="10dp"
+    android:padding="15dp"
+    card_view:cardBackgroundColor="#CCFFFF"
+    card_view:cardCornerRadius="7dp"
+    card_view:cardElevation="5dp"
+    android:orientation="vertical">
 
-    <android.support.v7.widget.CardView
-        android:id="@+id/card_view"
-        xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    <!--android:background="#3399FF"-->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        card_view:cardBackgroundColor="#1f1f1f"
-        card_view:cardCornerRadius="10dp"
-        card_view:cardElevation="5dp"
-        android:background="#ff91ffa2"/>
+        android:orientation="vertical"
+        android:longClickable="true"
+        android:padding="5dp">
 
-    <TextView
+        <TextView
             android:id="@+id/textViewName"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Name" />
+            android:text="@string/txtNameNotReplaced" android:layout_margin="5dp"/>
 
-    <TextView
+        <TextView
             android:id="@+id/textViewEmail"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Email" />
-</LinearLayout>
+            android:text="@string/txtEmailNotReplaced" android:layout_margin="5dp"/>
+    </LinearLayout>
+</android.support.v7.widget.CardView>

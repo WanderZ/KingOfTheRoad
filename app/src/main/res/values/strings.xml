@@ -7,11 +7,12 @@
     <string name="action_settings">Settings</string>
     <string name="title_activity_map">MapActivity</string>
 
+    <!-- Menu Text (Drawer Menu)-->
     <string-array name="items">
         <item>Home</item>
         <item>Maps</item>
-        <item>Item 3</item>
-        <item>Item 4</item>
+        <item>Routes</item>
+        <item>Create</item>
         <item>Item 5</item>
         <item>Item 6</item>
     </string-array>
@@ -19,5 +20,9 @@
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!-- Added as placeholder text for cards_layout.xml-->
+    <string name="txtNameNotReplaced">Name</string>
+    <string name="txtEmailNotReplaced">Email</string>
 
 </resources>

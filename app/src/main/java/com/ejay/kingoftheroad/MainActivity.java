@@ -1,10 +1,11 @@
 package com.ejay.kingoftheroad;
 
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.bluetooth.BluetoothGatt;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
@@ -13,12 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import com.google.android.gms.maps.GoogleMap;
 import com.razer.android.nabuopensdk.AuthCheckCallback;
 import com.razer.android.nabuopensdk.NabuOpenSDK;
@@ -94,6 +90,17 @@ public class MainActivity extends ActionBarActivity {
             nabuGetAllBandList();
         }
 
+//        mNabuSDK.getCurrentUserID(this, new UserIDListener() {
+//            @Override
+//            public void onReceiveData(String userID) {
+//                Log.d(TAG, "My user ID is: " + userID);
+//            }
+//
+//            @Override
+//            public void onReceiveFailed(String s) {
+//                Log.d(TAG, "My user ID is: FAILED");
+//            }
+//        });
         // get list items from strings.xml
         drawerListViewItems = getResources().getStringArray(R.array.items);
         // get ListView defined in activity_main.xml
@@ -175,6 +182,12 @@ public class MainActivity extends ActionBarActivity {
                 break;
             case 1:
                 fragment = new MapFragment();
+                break;
+            case 2:
+                fragment = new RouteFragment(); // TODO: Complete the view fragment for duplicating purposes
+                break;
+            case 3:
+                // fragment = new RouteFragment(); // TODO: Change this to...
                 break;
             default:
                 break;
@@ -269,8 +282,11 @@ public class MainActivity extends ActionBarActivity {
         if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
+
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
             return true;
         }
 

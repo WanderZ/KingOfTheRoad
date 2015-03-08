@@ -27,10 +27,17 @@
             </intent-filter>
         </activity>
         <activity android:name="com.razer.android.nabuopensdk.ActivityWebView" />
-
         <activity
             android:name=".MapActivity"
             android:label="@string/title_activity_map"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.ejay.kingoftheroad.MainActivity" />
+        </activity>
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings"
             android:parentActivityName=".MainActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

@@ -9,9 +9,9 @@ import android.widget.TextView;
 import java.util.List;
 
 /**
- * Created by A0097973 on 3/7/2015.
- */
-public class MyAdapter<E extends RouteData> extends RecyclerView.Adapter {
+ * Created by Andrew on 3/7/2015.
+ * */
+public class MyAdapter<E extends RouteData> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
 
     private List<E> items;
 
@@ -21,7 +21,8 @@ public class MyAdapter<E extends RouteData> extends RecyclerView.Adapter {
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-        View itemView = LayoutInflater.from(viewGroup.getContext()).inflate(
+        View itemView = LayoutInflater.from(
+            viewGroup.getContext()).inflate(
                 R.layout.cards_layout,
                 viewGroup,
                 false
@@ -30,17 +31,23 @@ public class MyAdapter<E extends RouteData> extends RecyclerView.Adapter {
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, int i) {
-        ((MyViewHolder)viewHolder).textViewName.setText(items.get(i).name);
-        ((MyViewHolder)viewHolder).textViewEmail.setText(items.get(i).email);
+    public void onBindViewHolder(MyViewHolder holder, int position) {
+        holder.textViewName.setText(items.get(position).name);
+        holder.textViewEmail.setText(items.get(position).email);
     }
 
     @Override
     public int getItemCount() {
-        return 25;
+        try {
+            return items.size();
+        }
+        catch(Exception err) {
+            return 20;
+        }
+
     }
 
-    public class MyViewHolder extends RecyclerView.ViewHolder {
+    public static class MyViewHolder extends RecyclerView.ViewHolder {
         public final TextView textViewName;
         public final TextView textViewEmail;
         public MyViewHolder(View itemView) {
